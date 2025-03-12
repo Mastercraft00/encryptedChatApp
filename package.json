@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "Encrypted chat application",
   "main": "index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Mastercraft00/encryptedChatApp.git"
+ "repository": {
+  "type": "git",
+  "url": "https://github.com/Mastercraft00/encryptedChatApp.git"
+
   },
   "author": "Mastercraft00",
   "license": "MIT",

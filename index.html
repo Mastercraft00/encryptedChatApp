@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat and Voice App</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/lock-icon.png">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body class="bg-gray-800 text-white h-screen flex flex-col">
+    <!-- Update Banner -->
+    <div id="update-banner" class="hidden fixed top-0 left-0 right-0 bg-green-600 text-white text-center p-4 flex justify-between items-center">
+        <span id="update-message" class="font-bold">
+            🎉 Welcome to this secured app! Here are some new features and updates:
+            <ul class="mt-2 text-sm text-left mx-auto inline-block">
+                <li>✔️ New login/signup</li>
+                <li>✔️ Messaging/verification</li>
+                <li>✔️ Voice chat</li>
+                <li>✔️ And much more to come! Stay tuned! 😊</li>
+            </ul>
+        </span>
+        <button id="close-banner" class="ml-4 bg-green-800 hover:bg-green-700 text-white px-2 py-1 rounded">
+            ✖
+        </button>
+    </div>
+
+    <!-- Login/Signup Screen -->
+    <div id="auth-screen" class="flex flex-col items-center justify-center h-screen">
+        <h1 class="text-2xl mb-4">Welcome to Chat App</h1>
+        <input id="auth-username" placeholder="Username" class="p-2 rounded bg-gray-700 text-white outline-none mb-2">
+        <input id="auth-password" type="password" placeholder="Password" class="p-2 rounded bg-gray-700 text-white outline-none mb-4">
+        <div>
+            <button onclick="signup()" class="px-4 py-2 bg-blue-500 rounded hover:bg-blue-600 mr-2">Sign Up</button>
+            <button onclick="login()" class="px-4 py-2 bg-green-500 rounded hover:bg-green-600">Log In</button>
+        </div>
+    </div>
+
+    <!-- Chat Screen -->
+    <div id="chat-screen" class="hidden h-screen flex flex-row">
+        <!-- User List -->
+        <aside class="w-1/4 bg-gray-900 p-4">
+            <h2 class="text-xl mb-4">Online Users</h2>
+            <ul id="user-list" class="space-y-2"></ul>
+        </aside>
+        <!-- Chat Area -->
+        <section class="flex flex-col flex-grow">
+            <header class="bg-gray-900 p-4 text-center text-xl font-bold">
+                <span id="current-chat">Chat Room</span>
+                <button id="start-call" class="ml-4 px-4 bg-red-500 hover:bg-red-600 rounded-lg font-bold">Start Call</button>
+            </header>
+            <main class="flex-grow overflow-y-auto p-4">
+                <ul id="messages" class="space-y-2"></ul>
+            </main>
+            <footer class="p-4 flex">
+                <input id="message" placeholder="Type your message..." class="flex-grow bg-gray-700 text-white p-2 rounded-lg outline-none">
+                <button onclick="sendMessage()" class="ml-2 px-4 bg-blue-500 hover:bg-blue-600 rounded-lg font-bold">Send</button>
+            </footer>
+        </section>
+    </div>
+
+    <script>
+        const socket = io();
+        let username = null;
+
+        // Show Update Banner
+        function showUpdateBanner() {
+            const banner = document.getElementById('update-banner');
+            banner.classList.remove('hidden');
+        }
+
+        // Close Update Banner
+        document.getElementById('close-banner').addEventListener('click', () => {
+            const banner = document.getElementById('update-banner');
+            banner.classList.add('hidden');
+        });
+
+        // Display the banner on page load
+        window.addEventListener('load', showUpdateBanner);
+
+        // Handle Signup
+        function signup() {
+            const user = document.getElementById('auth-username').value.trim();
+            const pass = document.getElementById('auth-password').value.trim();
+
+            if (!user || !pass) {
+                alert('Please provide both username and password.');
+                return;
+            }
+
+            socket.emit('signup', { username: user, password: pass });
+
+            socket.once('signup success', (message) => alert(message));
+            socket.once('signup failed', (error) => alert(error));
+        }
+
+        // Handle Login
+        function login() {
+            const inputUsername = document.getElementById('auth-username').value.trim();
+            const inputPassword = document.getElementById('auth-password').value.trim();
+
+            if (!inputUsername || !inputPassword) {
+                alert('Please enter both username and password.');
+                return;
+            }
+
+            socket.emit('login', { username: inputUsername, password: inputPassword });
+
+            socket.once('login success', (data) => {
+                username = data.username;
+                console.log('Login successful:', username);
+
+                // Transition to chat screen
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('chat-screen').classList.remove('hidden');
+            });
+
+            socket.once('login failed', (error) => {
+                alert('Login failed: ' + error);
+                console.log('Login error:', error);
+            });
+        }
+
+        // Send Message
+        function sendMessage() {
+            const message = document.getElementById('message').value.trim();
+            if (!message) {
+                alert('Message cannot be empty.');
+                return;
+            }
+
+            socket.emit('chat message', { username, message });
+            document.getElementById('message').value = ''; // Clear input
+        }
+
+        // Handle Incoming Messages
+        socket.on('chat message', (data) => {
+            const messageList = document.getElementById('messages');
+            const listItem = document.createElement('li');
+            listItem.textContent = `${data.username}: ${data.message}`;
+            listItem.className = 'p-2 bg-gray-700 rounded my-1';
+            messageList.appendChild(listItem);
+        });
+
+        // Voice Chat
+        document.getElementById('start-call').addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+                stream.getTracks().forEach(track => peer.addTrack(track, stream));
+
+                console.log('Voice call started!');
+                alert('Voice call started successfully!');
+            } catch (error) {
+                console.error('Error starting voice call:', error);
+                alert('Failed to start the voice call. Please check microphone permissions.');
+            }
+        });
+
+        // Debug: Confirm WebSocket connection
+        socket.on('connect', () => {
+            console.log('Connected to server with socket ID:', socket.id);
+        });
+    </script>
+</body>
+</html>

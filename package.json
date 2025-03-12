@@ -1,15 +1,19 @@
 {
   "name": "securechatapp",
   "version": "1.0.0",
-  "description": "",
+  "description": "Encrypted chat application",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Mastercraft00/encryptedChatApp.git"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Mastercraft00",
+  "license": "MIT",
   "type": "commonjs",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
   "dependencies": {
     "crypto": "^1.0.1",
     "express": "^4.21.2",
